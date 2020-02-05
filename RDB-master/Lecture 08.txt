@@ -1,0 +1,66 @@
+Lecture 08　敘述統計(1): 表格與統計值
+--------------------------------------------------------------------------------
+8.1　表格讀取
+
+> setwd(--工作路徑--)
+> load(cdc.RData)
+
+> str(cdc)　#查看資料型態 class(cdc)、資料子集 head/tail(cdc)、彙整統計 summary(cdc)
+'data.frame':	20000 obs. of  9 variables:
+ $ genhlth : Factor w/ 5 levels "excellent","very good",..: 3 3 3 3 2 2 2 2 3 3 ...
+ $ exerany : num  0 0 1 1 0 1 1 0 0 1 ...
+ $ hlthplan: num  1 1 1 1 1 1 1 1 1 1 ...
+ $ smoke100: num  0 1 1 0 0 0 0 0 1 0 ...
+ $ height  : num  70 64 60 66 61 64 71 67 65 70 ...
+ $ weight  : int  175 125 105 132 150 114 194 170 150 180 ...
+ $ wtdesire: int  175 115 105 124 130 114 185 160 130 170 ...
+ $ age     : int  77 33 49 42 55 55 31 45 27 44 ...
+ $ gender  : Factor w/ 2 levels "m","f": 1 2 2 2 2 2 1 1 2 1 ...
+> cdc$smoke100=as.factor(cdc$smoke100)
+
+--------------------------------------------------------------------------------
+8.2　欄位讀取與彙總
+
+> str(cdc$genhlth)　#即上段分行顯示(summary 道理相同)
+> table(cdc$genhlth)　#table 一律顯示次數統計
+> summary(cdc$genhlth)　#兩者結果相同，類別資料: 次數統計表
+excellent very good      good      fair      poor 
+     4657      6972      5675      2019       677
+
+> table(cdc$height)　#個別窮舉，宜先進行離散化
+> summary(cdc$height)　#兩者結果不同，連續資料: 摘要統計量
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  48.00   64.00   67.00   67.18   70.00   93.00
+
+--------------------------------------------------------------------------------
+> class(table(cdc$smoke))　#不同於 matrix, data frame
+[1] "table"
+> summary(table(cdc$smoke))
+Number of cases in table: 20000 
+Number of factors: 1 
+> summary(cdc$age)
+> table(cut(cdc$age, seq(16, 100, by=12)))　#預設含上界、不含下界(right=T)
+ (16,28]  (28,40]  (40,52]  (52,64]  (64,76]  (76,88]  (88,100] 
+    3863     5207     4644     2954     2356      920        56
+
+--------------------------------------------------------------------------------
+8.3　資料統計值
+
+> mean(cdc$weight)
+> median(cdc$weight)　#尋找資料點位置: which(cdc$weight=median(cdc$weight))
+> max(table(cdc$weight))　#無 mode 函數，需從類別次數表找最大值，回查表頭(欄名)
+> names(which.max(table(cdc$weight)))　#注意: which() 只能搭配布林判斷
+
+> range(cdc$age)
+> IQR(cdc$age)　#四分位距: Q3-Q1
+> var(cdc$age)　#標準差: sd(cdc$age)=sqrt(var(cdc$age))
+> summary(cdc$age)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  18.00   31.00   43.00   45.07   57.00   99.00
+
+--------------------------------------------------------------------------------
+> cov(cdc$height, cdc$weight)　#共變異數: 兩變數線性關係之強度+方向(限數值資料)
+> cov(cdc[, c("height", "weight", "age")])　#enable 三變數以上之共變異數矩陣
+
+> cor(cdc$weight, cdc$wtdesire)　#相關係數: 標準化、無單位之共變異數([-1, 1])
+> cor(cdc[, c("age", "weight", "wtdesire")])

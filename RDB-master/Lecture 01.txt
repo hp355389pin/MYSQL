@@ -1,0 +1,48 @@
+Lecture 01　R語言101
+--------------------------------------------------------------------------------
+1.1　常用功能指令
+
+> help(sum)　#等同 help("sum")
+> ?sum　#+指令: 就查詢功能而言，效用相同
+> ?base::sum　#已知 sum 位於 base 套件當中
+
+> help(base)
+> ?base　#+套件: 提供套件之概略質性描述
+> help(package="base")　#查看詳細套件文檔
+
+> ls()　#查看現有環境變數
+> rm(iris)　#等同 rm("iris")，刪除指定變數(形同 R-studio 之清除功能)
+> q()
+
+--------------------------------------------------------------------------------
+1.2　檔案讀、寫
+
+> data()　#查看內建資料集(但未使用)
+> data(iris)　#等同 data("iris"): 使用內建資料集
+
+> getwd()　#查看當前目錄
+> setwd("C:/Users/USER/Desktop/資料科學特區")　#習慣上會將檔案載放同資料夾下，利於開啟
+> setwd("C:\\Users\\USER\\Desktop\\資料科學特區")　#\表跳脫字符
+
+--------------------------------------------------------------------------------
+> data1=read.table("data1.txt", header=T)　#可開啟各種格式之檔案
+> data2=read.csv("data2.csv", header=F, sep="|")　#預設資料無表頭
+> data3=load("data3.RData")
+
+> file1=write.table(sample.data, file="file1.txt")　#sample.data: R 軟體內開啟之檔案
+> file2=write.csv(sample.data, file="file2.csv", sep=" ")　#讀、寫時均可指定資料分隔字符
+> file3=save(x=sample.data, file="file3.RData")
+
+--------------------------------------------------------------------------------
+> install.packages(readxl)　#讀 excel(.xlsx) 檔
+> library(readxl)
+> data4=read_excel("data4.xlsx")
+
+> install.packages(jsonlite)　#讀 json 檔
+> library(jsonlite)
+> data5=fromJSON("data5.json")
+
+> install.packages(XML)　#讀 xml 檔
+> library(XML)
+> url="http://..."
+> data6=xmlToDataFrame(url)

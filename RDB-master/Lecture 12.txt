@@ -1,0 +1,119 @@
+Lecture 12　機器學習(2): 分群問題
+--------------------------------------------------------------------------------
+12.1　距離演算
+
+> A=c(10, 15, 20)
+> B=c(10, 10, 10)
+
+> dist(rbind(A, B), method="euclidean")　#歐氏距離，即 minkowski distance(p=2)
+> dist(rbind(A, B), method="manhattan")　#曼哈頓距離，即 minkowski distance(p=1)
+* minkowski 之極限即為切比雪夫距離(chebyshev): max(0, 5, 10)=10
+
+--------------------------------------------------------------------------------
+* 單一連結聚合: 群間距離＝雙群中最近兩點之距
+  完整連結聚合: 群間距離＝雙群中最遠兩點之距
+  平均連結聚合: 群間距離＝雙群中各點距離之總平均
+  Wards method: 合併兩群後，各點至群心之距離總和
+
+--------------------------------------------------------------------------------
+12.2　階層式分群(以 bottom-up 為例)
+
+> customer=read.csv("customer.csv", header=T)　#也可用 read.table()
+> head(customer, 3)
+   ID Visit.Time Average.Expense Sex Age
+1   1          3             5.7   0  10
+2   2          5            14.5   0  27
+3   3         16            33.5   0  32
+> customer=scale(customer[,-1])　#單位問題: 標準化處理(ID 欄位除外)
+> head(customer, 3)
+     Visit.Time Average.Expense       Sex        Age
+[1,] -1.2021905      -1.3523765 -1.456685 -1.2313440
+[2,] -0.7569348      -0.3046072 -1.456685  0.5995173
+[3,]  1.6919719       1.9576221 -1.456685  1.1380059
+
+> M1=hclust(dist(customer, method="euclidean"), method="ward.D2")　#點間距離選擇歐氏; 群間距離選擇沃德
+> M2=hclust(dist(customer, method="manhattan"), method="average")　#點間距離選擇曼哈頓; 群間距離選擇平均
+
+--------------------------------------------------------------------------------
+> cutree(M1, k=5)　#依序輸出所有樣本分屬之群別
+> table(cutree(M1, k=5)) 
+ 1  2  3  4  5 
+11  8 16 15 10 
+> customer[cutree(M1, k=5)==1,]
+      Visit.Time Average.Expense       Sex         Age
+[1,] -1.20219054     -1.35237652 -1.456685 -1.23134396
+[2,] -0.75693479     -0.30460718 -1.456685  0.59951732
+[3,] -0.75693479     -0.13791661 -1.456685  0.92261049
+ ...
+
+> plot(M1)　#直接畫出分群枝圖
+> rect.hclust(M1, k=5)　#繪框: 需承接 plot() 指令
+
+--------------------------------------------------------------------------------
+12.3　K-Means 分群
+
+* 需事先決定群數 k: 隨機選取 k 筆資料作為初始群心
+* 固定群心，劃分剩餘資料之群屬; 固定剩餘資料，重新計算群心(循環至群心不動)
+> K=kmeans(customer, 4)
+> K
+K-means clustering with 4 clusters of sizes 8, 16, 25, 11　#K$size
+
+Cluster means:　#K$center
+  Visit.Time Average.Expense        Sex        Age
+1  1.3302016       1.0155226 -1.4566845  0.5591307
+2  0.8571173       0.9887331  0.6750489  1.0505015
+3 -0.6322632      -0.7299063  0.6750489 -0.6411604
+4 -0.7771737      -0.5178412 -1.4566845 -0.4774599
+
+Clustering vector:　#K$cluster
+ [1] 4 4 1 4 1 4 1 1 4 4 4 1 1 4 4 4 1 4 1 2 3 2 3 2 2 3 3 2 3 3 3 2 2 2 3 3
+[37] 2 3 3 3 3 3 3 3 2 2 3 3 3 2 3 2 2 3 3 3 2 3 3 2
+
+Within cluster sum of squares by cluster:　#K$withinss
+[1]  5.90040 22.58236 20.89159 11.97454
+ (between_SS / total_SS =  74.0 %)
+
+Available components:
+[1] "cluster"      "centers"      "totss"        "withinss"    
+[5] "tot.withinss" "betweenss"    "size"         "iter"        
+[9] "ifault"      
+
+--------------------------------------------------------------------------------
+> library(cluster)
+> clusplot(customer, K$cluster)　#2 components explain 85% of variability
+> plot(customer, col=K$cluster)　#2 variables(散佈圖預設: 呈現兩大主成分)
+> barplot(t(K$centers), besides=T)　#轉置: 組別成為次分類，本身已是聯合機率表
+
+--------------------------------------------------------------------------------
+12.4　分群評估
+
+* silhouette(x)=b(x)-a(x)/max([b(x), a(x)]): 群間距離(single-linkage)-群內距離
+> K=kmeans(customer, 4)
+> KS=silhouette(K$cluster, dist(customer))　#分別代表分群及樣本點
+ Cluster sizes and average silhouette widths:
+        8        16        25        11 
+0.5464597 0.3794910 0.5164434 0.4080823
+
+ Individual silhouette widths:
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ 0.1931  0.4030  0.4890  0.4641  0.5422  0.6333
+> plot(KS)
+
+--------------------------------------------------------------------------------
+> G=2:10
+> WSS=sapply(G, function(K){kmeans(customer, centers=K)$tot.withinss})　#2~10 逐元素代入 $tot.withinss
+> WSS
+> plot(G, WSS, type="l")　#l 以直線連綴; WSS(within sum of squares): 尋找斜率改變處
+
+> library(fpc)
+> SW=sapply(G, function(K){cluster.stats(dist(customer), kmeans(customer, centers=k)$cluster)$avg.silwidth})
+> SW
+> plot(G, SW, type="l")　#SW(average silhouette width): 尋找最大值處
+
+--------------------------------------------------------------------------------
+12.5　密度式分群: DBSCAN
+
+* 由cores(核心點), EPS(半徑), minPts(數量)組成。符合在 EPS(一段距離)內包含 minPts(數量)者，稱為核心點
+* 核心點可觸及但不滿足 minPts 者則為 borders(邊界點); 不在任何點 EPS 距離內可達者，稱為 noises(局外點)
+
+* 可分辨資料 outlier 及偏態分布，唯組數為未定

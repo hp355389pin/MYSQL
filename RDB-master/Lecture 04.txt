@@ -1,0 +1,94 @@
+Lecture 04　陣列(matrix)
+--------------------------------------------------------------------------------
+4.1　陣列之產生
+
+> M1=matrix(1:6, nrow=2)　#等同 seq(1,6); 預設以 col 填入(byrow=F)
+> M2=matrix(seq(1,6), nrow=2, byrow=T)
+> M2
+     [,1] [,2] [,3]
+[1,]    1    2    3
+[2,]    4    5    6
+> class(M2)
+> str(M2)
+int [1:2, 1:3] 1 4 2 5 3 6
+> summary(M2)
+       V1             V2             V3      
+ Min.   :1.00   Min.   :2.00   Min.   :3.00  
+ 1st Qu.:1.75   1st Qu.:2.75   1st Qu.:3.75  
+ Median :2.50   Median :3.50   Median :4.50  
+ Mean   :2.50   Mean   :3.50   Mean   :4.50  
+ 3rd Qu.:3.25   3rd Qu.:4.25   3rd Qu.:5.25  
+ Max.   :4.00   Max.   :5.00   Max.   :6.00
+
+--------------------------------------------------------------------------------
+4.2　基本操作運算
+
+> M1*M2　#對應位置相乘
+> M1XM2　#矩陣乘法 (col(M1)=row(M2) 才可計算)
+
+> A=c(80, 95, 85)
+> B=c(90, 85, 88)
+> score=matrix(c(A, B), nrow=2, byrow=T)　#陣列: 將向量(序列)依規則(nrow,byrow)填入
+> t(score)
+     [,1] [,2]
+[1,]   80   90
+[2,]   95   85
+[3,]   85   88
+> dim(score)　#row/col: nrow(score)/ncol(score)
+
+--------------------------------------------------------------------------------
+4.3　條件與篩選
+
+> rownames(score)=c("Lynn", "Irene")
+> colnames(score)=c("M", "F", "T")
+> score[1,]　#等同 score["Lynn",]
+  M  F  T 
+ 80 95 85
+> score[,1:2]　#等同 score[,c("M", "F")]; row/col>=2 即會顯示表頭，A:B 表連續(位置)範圍
+        M  F
+ Lynn  80 95
+ Irene 90 85
+
+--------------------------------------------------------------------------------
+> score2=rbind(score, c(99, 95, 98))
+> score3=cbind(score2, c("A", "A", "A+"))　#以原資料bind，但陣列要求同型態故會強制轉換
+      　 M    F    T        
+  Lynn "80" "95" "85" "A" 
+ Irene "90" "85" "88" "A" 
+       "99" "93" "97" "A+"
+> rowSums(score)　#學生總成績
+> colMeans(score)　#測驗平均分
+
+--------------------------------------------------------------------------------
+[範例] R 語言測驗分為期中、期末考，以下是三位同學之成績: Adam 74/83、Linda 91/78、William 69/96
+
+1. 請計算出期中、期末考之平均成績
+> Adam=c(74, 83)
+> Linda=c(91, 78)
+> William=c(69, 96)
+> score=matrix(c(Adam, Linda, William), byrow=T, nrow=3)　#申明以 row 逐筆填入，並計算 col 平均
+> colMeans(score)
+[1] 78.000 85.667
+
+2. 今發現遺漏一筆成績: Joanna 85/86，請協助增補上並新增一個總分欄位(T)
+> Joanna=c(85, 86)
+> score2=rbind(score, Joanna)
+> score3=cbind(score2, rowSums(score2))　#將rowSums新增為一個欄位
+> rownames(score2)=c("Adam", "Linda", "William", "Joanna")
+> colnames(score3)=c("M", "F", "T")
+> score3
+          M  F   T
+ Adam    74 83 157
+ Linda   91 78 169
+ William 69 96 165
+ Joanna  85 86 171
+
+3. 在計算成績時，老師以40% M、60% F為配重比例。請依此新增一個總成績欄位(S)
+> score4=cbind(score3, score3[,1]*0.4+score3[,2]*0.6)
+> colnames(score4)[ncol(score4)]="S"　#設定第 ncol(score4) 項之colnames
+> score4
+          M  F   T    S
+ Adam    74 83 157 79.4
+ Linda   91 78 169 83.2
+ William 69 96 165 85.2
+ Joanna  85 86 171 85.6

@@ -1,0 +1,109 @@
+Lecture 09　敘述統計(2): 圖表視覺化
+--------------------------------------------------------------------------------
+> pdf(--工作路徑/檔名.pdf--)
+> png(--工作路徑/檔名.png--)
+> jpeg(--工作路徑/檔名.jpeg--)　#儲存檔案後才開始繪圖
+> dev.off()　#所有變化存入檔
+--------------------------------------------------------------------------------
+9.1　類別型圖表: 只接受(整理後)次數統計
+
+  bar chart(長條圖): barplot
+> barplot(table(cdc$exerany))
+> barplot(table(cdc$genhlth), xlab="健康狀況", ylab="人數", col=rainbow(5))
+> barplot(table(cut(cdc$height, seq(45, 95, by=5))), xlab="身高區段", ylab="人數", col=rainbow(10))　#離散化之連續資料也適用
+> barplot(table(cdc$exerany, cdc$gender), beside=T)　#雙變數: 聯合機率表，預設堆疊呈現(beside=F)
+
+--------------------------------------------------------------------------------
+  pie chart(圓餅圖): pie
+> pie(table(cdc$genhlth))
+> pie(table(cdc$genhlth), labels=names(table(cdc$genhlth)), col=rainbow(5))　#預設標籤: 表頭(names)
+
+> G=table(cdc$genhlth)
+> pie(G, labels=paste(names(G), "x", G), col=rainbow(5))　#標籤搭配分類次數
+> pie(G, labels=paste(names(G), "x", round(G/length(cdc$genhlth)*100, 1), "%"), col=rainbow(5))　#標籤搭配類別比例
+> H=table(cut(cdc$age, seq(16, 100, by=12), right=T))
+> pie(H, labels=paste(names(H), "x", H), col=rainbow(6))
+> pie(H, labels=paste(names(H), "x", round(H/length(cdc$age)*100, 1), "%"), col=rainbow(6))
+* 圓餅圖不適合呈現聯合機率資料
+
+--------------------------------------------------------------------------------
+  mosaic chart(鑲嵌圖): mosaicplot
+> M=table(cdc$gender, cdc$exerany)
+> rownames(M)=c("男性", "女性")　#注意: rownames 影響橫軸(xlab)
+> colnames(M)=c("無運動", "有運動")　#注意: colnames 影響縱軸(ylab)
+> mosaicplot(M, col=rainbow(2))
+* 鑲嵌圖不適合呈現聯合機率資料(已離散化處理之連續資料無法跨變數分析)
+
+--------------------------------------------------------------------------------
+9.2　連續型圖表: 可逕用原始數據
+
+　histogram(直方圖): hist
+> hist(cdc$weight)
+> hist(cdc$weight, breaks=25, col=rainbow(15))　#breaks: 指定(概略)組數
+
+--------------------------------------------------------------------------------
+[範例] 若欲依照性別做身高、體重的直方圖對照，如何顯示較為清晰？
+
+> par(mfrow=c(2, 2))　#規劃版面為 2x2(row/col)
+> M=cdc[cdc[,"gender"]=="m",]
+> F=cdc[cdc[,"gender"]=="f",]
+
+> hist(M$height, breaks=15, col=rainbow(10), xlab="身高", main="男性身高")
+> hist(M$weight, breaks=15, col=rainbow(10), xlab="體重", main="男性體重")
+> hist(F$height, breaks=15, col=rainbow(10), xlab="身高", main="女性身高")　#可統一設定 xlim 以利比較
+> hist(F$weight, breaks=15, col=rainbow(10), xlab="體重", main="女性體重")
+
+--------------------------------------------------------------------------------
+  box chart(盒鬚圖): boxplot
+> boxplot(cdc$age)
+> boxplot(cdc$age~cdc$gender, ylab="年齡", xlab="性別", col=rainbow(5))　#以 gender 分類(預設為垂直)
+> boxplot(cdc$age~cdc$gender, xlab="年齡", ylab="性別", col=rainbow(5), horizontal=T)　#設定水平輸出: x,y 標籤對調
+
+--------------------------------------------------------------------------------
+  scatter plot(散佈圖): plot
+> plot(cdc$weight, cdc$height)
+> plot(cdc[,c("height", "weight", "wtdesire")])　#輸出 3x3 之兩相散佈圖
+
+--------------------------------------------------------------------------------
+> g=ggplot(cdc, aes(x=height))　#定義畫布
+> g=g+geom_histogram()+xlab("身高分布")　#如同畫布疊層上色
+> ggsave(filename=--檔名.png--, plot=g)
+--------------------------------------------------------------------------------
+9.3　ggplot 套件: 類別資料
+
+> install.packages("ggplot2")
+> library("ggplot2")
+
+> ggplot(cdc, aes(x=smoke100))+geom_bar()　#條圖，ggplot 均可接原始資料
+> ggplot(cdc, aes(x=smoke100))+geom_bar(fill="blue", color="yellow")+xlab("吸菸情況")+ylab("人數")　#藍底黃框，預設標籤: 變數名稱、count
+
+> ggplot(cdc, aes(x=smoke100, fill=gender))+geom_bar()　#依 gender 分類不影響 x,y 軸: 同張表上的圖例
+> ggplot(cdc, aes(x=smoke100, fill=gender))+geom_bar(position="dodge")　#預設 stack 堆疊。dodge 左右並排、fill 觀察比例
+> ggplot(cdc, aes(x=smoke100))+geom_bar()+facet_wrap(~gender)　#直接依 gender 繪製兩張圖
+> ggplot(cdc, aes(x=smoke100))+geom_bar()+facet_wrap(genhlth~gender)　#genhlth>gender
+
+--------------------------------------------------------------------------------
+> category=as.data.frame(table(cut(cdc$height, seq(45, 95, by=5))))　#以離散化連續資料為例，需轉為 data frame 才可取 x,y 變數
+> ggplot(category, aes(x=Var1, y=Freq))+geom_bar(stat="identity")　#identity: 以資料原貌製表，不需彙整統計
+
+> ggplot(cdc, aes(x=genhlth))+geom_bar()+coord_flip()　#水平軸向
+> ggplot(cdc, aes(x=genhlth))+geom_bar()+coord_polar()　#極座標花瓣圖
+* 注意: ggplot 無法直接畫圓餅圖
+
+-------------------------------------------------------------------------------
+9.4　ggplot 套件: 連續資料
+
+> ggplot(cdc, aes(x=height))+geom_histogram()
+> ggplot(cdc, aes(x=height))+geom_histogram(fill="pink", color="black", bins=40)+xlab("身高分布")+ylab("人數")　#bins: 預設 30，值越大則越精分
+
+> ggplot(cdc, aes(x=weight, fill=gender))+geom_histogram()
+> ggplot(cdc, aes(x=weight, fill=gender))+geom_histogram(position="dodge")　#這兩種較適用於離散型；宜使用 facet_wrap 畫成數張
+> ggplot(cdc, aes(x=weight))+geom_histogram()+facet_wrap(~gender)
+> ggplot(cdc, aes(x=weight))+geom_histogram()+facet_wrap(gender~genhlth)　#gender>genhlth
+
+--------------------------------------------------------------------------------
+> ggplot(cdc, aes(x=height, y=weight))+geom_point()
+> ggplot(cdc, aes(x=height, y=weight))+geom_point(aes(col=gender))　#以 gender 作為色彩(shape/size 亦可)圖例
+
+> ggplot(cdc, aes(x=height))+geom_histogram()+coord_flip()
+> ggplot(cdc, aes(x=height))+geom_histogram()+coord_polar()　#將(分組條)極座標化投影

@@ -1,0 +1,109 @@
+Lecture 10　敘述統計(3): dplyr套件
+--------------------------------------------------------------------------------
+10.1　資料庫連接
+
+> install.packages("dplyr")
+> install.packages("RMariaDB")
+> library(dplyr)
+> library(RMariaDB)
+
+> conn=dbConnect(MariaDB(), dbname=xxx, host=xxx, port=xxx, user=xxx, password=xxx)　#通過伺服 IP 及通閘連線至資料庫
+> db_drop_table(conn, "iris")　#複製: copy_to(conn, "iris")
+
+> dbGetQuery(conn, "select "Sepal.Length" from iris") %>% filter(Species=="setosa")　#直接寫入 SQL 語句/dplyr 套件(詳見 10.2)
+> tbl(conn, "iris") %>%
++ select(starts_with("Sepal"), "Species") %>%
++ group_by("Species") %>%
++ summarise_at(.funs=funs(mean, sd(., na.rm=T)), .vars=vars(starts_with("Sepal"))))　#適用於多變數彙整，函數可為多(詳見 10.3)
+
+--------------------------------------------------------------------------------
+10.2　基礎篩選、排序
+
+> install.packages("dplyr")
+> library("dplyr")
+
+> select(appledaily, category, clicked)　#appledaily[, c("category", "clicked")]
+* 可搭配 contains, starts/ends_with，針對欄位名稱
+> filter(appledaily, category=="國際")　 #appledaily[appledaily$category=="國際",]
+* 可搭配 & and, | or，針對資料內容
+> filter(appledaily, category %in% c("娛樂", "社會"))
+
+--------------------------------------------------------------------------------
+[範例] 以 dplyr 語句完成下列資料查詢需求:
+
+1. 篩選出娛樂分類新聞之 category, clicked 欄位
+> appledaily %>%
++ select(., category, clicked) %>%　#.可省略，表承接上層資料(pipe: 資料導流)
++ filter(., category=="娛樂")
+
+2. 承上，將新聞分類更改為社會，並依點閱數由高至低排列
+> appledaily %>%
++ select(., category, clicked) %>%
++ filter(., category=="社會") %>%
++ arrange(., desc(clicked))　#預設升冪排列(asc)
+
+--------------------------------------------------------------------------------
+10.3　分組彙整
+
+> appledaily %>%
++ group_by(category) %>%　#分組彙整: 如同 tapply 迴圈函式
++ summarise(total=sum(clicked))
+# A tibble: 16 x 2
+   category                             total
+   <chr>                                <int>
+ 1 3C                                  146308
+ 2 正妹                                672949
+ 3 生活                               3405582
+ 4 地產                                219668
+ 5 社會                               5644438
+ ...
+> total=tapply(appledaily$clicked, appledaily$category, sum)
+     3C        正妹        生活        地產        社會 
+ 146308      672949     3405582      219668     5644438
+
+* 處理資料空值
+> summarise(total=sum(slicked, na.rm=T))
+> total=tapply(appledaily$clicked, appledaily$category, function(e){sum(e), na.rm=T})
+
+--------------------------------------------------------------------------------
+[範例] 以 dplyr 語句完成下列資料查詢需求:
+
+1. 統計各類新聞之平均點閱數，並依結果由低至高排列
+> appledaily %>%
++ group_by(category) %>%
++ summarise(average=mean(clicked, na.rm=T)) %>%
++ arrange(average)
+
+2. 計算各類新聞之類別總點閱數、類別總點閱占比
+* 解一: 增寫點閱占比欄位，再同時彙整點閱數及占比
+> all=appledaily %>%
++ select(clicked) %>%
++ sum()
+
+> appledaily=appledaily %>%
++ mutate(portion=clicked/all)
+
+> summary1=appledaily %>%
++ group_by(category) %>%
++ summarise_at(.vars=vars(clicked, portion), .funs=funs(sum))　#多欄位之彙總: summaryse_at 指定欄位/_if 符合條件/_all
+
+--------------------------------------------------------------------------------
+* 解二: 分組彙整點閱數，再統一相除總點閱數、增寫欄位
+> summary2=appledaily %>%
++ group_by(category) %>%
++ summarise(total=sum(clicked))
+
+> all=appledaily %>%
++ select(clicked) %>%
++ sum()
+
+> summary2=summary2 %>%
++ mutate(portion=total/all)
+# A tibble: 16 x 3
+   category                           clicked  portion
+   <chr>                                <int>    <dbl>
+ 1 3C                                  146308    0.007 
+ 2 正妹                                672949    0.032  
+ 3 生活                               3405582    0.159   
+ 4 地產                                219668    0.010  
+ 5 社會                               5644438    0.264 

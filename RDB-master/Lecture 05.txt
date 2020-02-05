@@ -1,0 +1,99 @@
+Lecture 05　表格(data frame)與清單(lists)
+--------------------------------------------------------------------------------
+5.1　表格之產生
+
+> product=c("egg", "milk", "beef")
+> price=c(40, 110, 100)
+> customer1=c(TRUE, FALSE, TRUE)
+> customer2=c(TRUE, TRUE, FALSE)
+> data=data.frame(product, price, customer1, customer2)
+
+--------------------------------------------------------------------------------
+> data(iris)
+> class(iris)　#雜湊型資料，顯示data frame
+> str(iris)
+ 'data.frame':	150 obs. of  5 variables:
+ $ Sepal.Length: num  5.1 4.9 4.7 4.6 5 5.4 4.6 5 4.4 4.9 ...
+ ...
+ $ Species     : Factor w/ 3 levels "setosa","versicolor",..: 1 1 1 1 1 1 1 1 1 1 ...
+> summary(iris)
+  Sepal.Length    Sepal.Width     Petal.Length    Petal.Width          Species  
+ Min.   :4.300   Min.   :2.000   Min.   :1.000   Min.   :0.100   setosa    :50  
+ 1st Qu.:5.100   1st Qu.:2.800   1st Qu.:1.600   1st Qu.:0.300   versicolor:50  
+ Median :5.800   Median :3.000   Median :4.350   Median :1.300   virginica :50  
+ Mean   :5.843   Mean   :3.057   Mean   :3.758   Mean   :1.199                  
+ 3rd Qu.:6.400   3rd Qu.:3.300   3rd Qu.:5.100   3rd Qu.:1.800                  
+ Max.   :7.900   Max.   :4.400   Max.   :6.900   Max.   :2.500
+
+> head(iris)　#預設6筆
+> tail(iris,10)
+
+--------------------------------------------------------------------------------
+5.2　條件與篩選
+
+> iris[1:3, "Petal.Length"]　#等同 iris[1:3, 3]: 先選 row 再篩選欄位
+> iris$"Petal.Length"[1:3]　#data frame 取出欄位=一維向量
+
+--------------------------------------------------------------------------------
+[範例] 請從鳶尾花資料集(iris)完成下列資料查詢:
+
+1. 請選出花萼(sepal)長度>5之樣本
+> which(iris$Sepal.Length>5)　#呈現 TRUE 之資料位置(index)
+> iris[iris$Sepal.Length>5,]
+> iris[iris[, "Sepal.Length"]>5,]　#(欄位: 前帶逗號)所篩選出的樣本: 後帶逗號
+
+2. 請選出品種(species)virginica之樣本
+> which(iris$Species=="virginica")
+> iris[iris$Species=="virginica",]　#資料集 $ 欄位已在做篩選，寫在逗號之前
+> iris[iris[,"Species"]=="virginica",]
+
+--------------------------------------------------------------------------------
+5.3　合併與排序
+
+> merge(x=file1, y=file2, by="ID")　#inner: 只配對 ID 相符者
+> merge(x=file1, y=file2, by="ID", all.x=True)　#所有 x 元素(無論是否配對)都會印出
+> merge(x=file1, y=file2, by="ID", all=True)
+
+> sort(iris$Sepal.Length, decreasing=T)　#針對欄位(由大而小)排序值
+  [1] 7.9 7.7 7.7 7.7 7.7 7.6 7.4 7.3 7.2 7.2 7.2 7.1 7.0 6.9 6.9 6.9 6.9 6.8 6.8 6.8 6.7 6.7 6.7 6.7 6.7 6.7 6.7 6.7 6.6 6.6 6.5 6.5 6.5 6.5 6.5 ...
+ [46] 6.3 6.3 6.3 6.3 6.3 6.3 6.2 6.2 6.2 6.2 6.1 6.1 6.1 6.1 6.1 6.1 6.0 6.0 6.0 6.0 6.0 6.0 5.9 5.9 5.9 5.8 5.8 5.8 5.8 5.8 5.8 5.8 5.7 5.7 5.7 ...
+ [91] 5.6 5.5 5.5 5.5 5.5 5.5 5.5 5.5 5.4 5.4 5.4 5.4 5.4 5.4 5.3 5.2 5.2 5.2 5.2 5.1 5.1 5.1 5.1 5.1 5.1 5.1 5.1 5.1 5.0 5.0 5.0 5.0 5.0 5.0 5.0 ...
+[136] 4.8 4.8 4.8 4.8 4.7 4.7 4.6 4.6 4.6 4.6 4.5 4.4 4.4 4.4 4.3
+> iris[sort(iris$Sepal.Length, decreasing=T),]　#值無法回取資料，故此指令無意義
+
+> order(iris$Sepal.Length, decreasing=T)　#針對欄位(由大至小)排序位置
+  [1] 132 118 119 123 136 106 131 108 110 126 130 103  51  53 121 140 142  77 113 144  66  78  87 109 125 141 145 146  59  76  55 105 111 117 148 ...
+ [46] 101 104 124 134 137 147  69  98 127 149  64  72  74  92 128 135  63  79  84  86 120 139  62  71 150  15  68  83  93 102 115 143  16  19  56 ...
+ [91] 122  34  37  54  81  82  90  91   6  11  17  21  32  85  49  28  29  33  60   1  18  20  22  24  40  45  47  99   5   8  26  27  36  41  44 ...
+[136]  13  25  31  46   3  30   4   7  23  48  42   9  39  43  14
+> iris[order(iris$Sepal.Length, decreasing=T),]　#位置可以回取資料
+
+--------------------------------------------------------------------------------
+[範例] 2330.csv 為一股價資料檔:
+
+1. 請找出 2014 全年最高、最低收盤價(close)為何
+> stock=read.csv(2330.csv, header=TRUE)　#以 read.table 開啟亦可，命名不以數字開頭
+> str(stock)
+> stock$Date=as.Date(stock$Date)　#以利日期篩選，將 Date 欄位轉為日期型態
+
+> stock2014=stock[[,("Date">"2014-01-01" & "Date"<"2014-12-31")],]
+> stock2014=stock[(stock$Date>="2014-01-01" & stock$Date<="2014-12-31"),]　#做法相同，都是篩選(擷取)資料表
+
+> max(stock2014$Close)　#欄位會繼承，同理 min(stock2014$Close) 可找出最低值
+> sort(stock2014$Close, decreasing=T)　#首筆最高、末筆最低
+
+2. 承上，請找出這兩次事件的發生日期
+> stock2014[order(stock2014$Close, decreasing=T)]　#欲查看日期(等欄位)，要用原表格篩選
+
+--------------------------------------------------------------------------------
+5.4　清單(lists)
+
+> product=list(name="orange", sales=c(10, 20))　#類似巢狀列表，但更像從字典取值
+> product
+$name [1] "orange"
+$sales[1] 10 20
+> product$name　#等同 product[1]
+> product$sales[1]　#等同 product[[2]][1]: 從外兩層取(python寫法)
+
+> flower=list(title="iris data", data=iris)
+> flower$data[,"Sepal.Length"]　#等同 flower[[2]][,1]: data frame 逗號不省略

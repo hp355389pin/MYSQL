@@ -1,0 +1,74 @@
+Lecture 07　資料預處理
+--------------------------------------------------------------------------------
+7.1　型態整理
+
+> seted(--工作路徑--)
+> load(appledaily.RData)
+> save(appledaily, file=--(工作路徑+)檔名.RData--)
+
+--------------------------------------------------------------------------------
+> as.character("字串")　#放入欄位: as.character(appledaily$title)
+> as.Date("日期")　#放入欄位: as.Date(appledaily$dt, format="%Y年%m月%d日")
+
+> as.POSIXct("時間")　#放入欄位: as.POSIXct(appledaily$dt, format="%Y年%m月%d日%H:%M")
+[1] "2016-04-13 16:25:00 CST"
+[2] "2016-04-13 16:23:00 CST" 
+...
+> unclass("時間")　#以總秒數儲存
+[1] 1460535240 1460535180 ...
+> as.POSIXlt("時間") 
+> unclass("時間")　#各時間單位儲存
+$sec: 0, 0, 0 ...
+$min: 32, 32, 31 ...
+$hour: 14, 14, 14 ...
+$mday: 15, 15, 15 ...
+$mon: 3, 3, 3 ...
+$year: 116, 116, 116 ...
+...
+
+--------------------------------------------------------------------------------
+7.2　資料格式整理
+
+> appledaily$clicked=sub("人氣\\(", "" , appledaily$clicked)　#\\表跳脫字元，可整筆取代覆寫
+> appledaily$clicked=sub("\\)", "", appledaily$clicked)
+> appledaily$clicked=as.integer(appledaily$clicked)
+
+> appledaily$clicked=as.integer(sub("人氣\\(", "", sub("\\)", "", appledaily$clicked)))　#單行巢狀式寫法
+> appledaily$clicked
+[1]   1754      0      0      0    311     24     20   ...
+
+> grep("日本", appledaily$title)
+[1]    174    210    262    325    334    422    426   ...
+> appledaily$title[grep("日本", appledaily$title)]
+ [1] "翁啟惠自日本轉機回台　預計12:45降落松山機場"    "日本熊本大地震　我外交部：國人均安"             "【壹週刊】日本寫真女星　在台熱舞替她宣傳"      
+ [4] "【法廣RFI】日本九州發生強烈地震"                "【法廣RFI】日本熊本地震 已知9死餘震不斷"        "日本熊本強震　當地主播戴安全帽報新聞"          
+ [7] "【更新】日本益城町19棟建築倒塌　89人受傷"       "日本熊本縣強震　蔡英文表達關切與慰問"           "觀光局：初查日本旅行團人員均安"                
+[10] "【有片】受強震影響　日本熊本縣建築倒塌多處起火" "日本預警系統多強大　正妹記者超有感"             "日本熊本益城町強震　至少10棟建築物倒塌"        
+...   
+
+--------------------------------------------------------------------------------
+7.3　遺失值處理
+
+> draw=sample(1:nrow(appledaily), 20)　#隨機給出 20 index
+> appledaily[draw, "clicked"]=NA
+
+> which(is.na(appledaily$clicked))　#回傳 True(欄值遺失) index
+> sum(is.na(appledaily$clicked))
+
+--------------------------------------------------------------------------------
+> missing=which(is.na(appledaily$clicked))
+> appledaily=appledaily[-missing,]　#剔除 $clicked 遺失值之樣本
+* 篩選放入 index、條件均可，(which)is.na(appledaily$clicked) 輸出相同
+
+> average=mean(appledaily$clicked, na.rm=T)
+> appledaily[missing, "clicked"]=average　#總體平均填入: 等同 appledaily$clicked[is.na(appledaily$clicked)]
+
+> cat_average=tapply(appledaily$clicked, appledaily$category, mean)
+> cat_average=tapply(appledaily$clicked, appledaily#category, function(e){mean(e, na.rm=T)})　#自定義函式具有較佳彈性
+> cat_average
+       3C           正妹          生活	　　　...　　#欄名: names(cat_average[i])
+ 3954.270      84118.625      11703.03	　　 ...　　#數值: cat_average[i]
+
+> for(i in 1:length(cat_average)){
+  appledaily[appledaily$category==names(cat_average[i]) & is.na(appledaily$clicked), "clicked"]=cat_average[i]}
+* 類別平均填入: 符合 is.na 條件者，依欄名填入數值
